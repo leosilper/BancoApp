@@ -1,0 +1,85 @@
+🏦 BancoApp
+Um aplicativo bancário mobile desenvolvido com React Native e Expo, com autenticação, requisição de dados com Axios e estrutura modular para escalabilidade.
+
+🚀 Tecnologias
+React Native
+
+Expo
+
+TypeScript
+
+Axios
+
+React Navigation
+
+Expo Secure Store
+
+📦 Instalação
+Clone o repositório:
+
+bash
+Copiar
+Editar
+git clone https://github.com/leosilper/BancoApp.git
+cd BancoApp
+Instale as dependências:
+
+bash
+Copiar
+Editar
+npm install
+# ou
+yarn install
+Configure seu arquivo .env:
+
+Crie um .env na raiz com o seguinte conteúdo (ajuste o IP/URL conforme necessário):
+
+env
+Copiar
+Editar
+API_URL=http://192.168.0.132:8080
+⚠️ Use o IP da máquina onde está rodando o backend (se for local).
+
+▶️ Execução
+Inicie o projeto com:
+
+bash
+Copiar
+Editar
+npm start
+# ou
+yarn start
+Ou direto para Android:
+
+bash
+Copiar
+Editar
+npm run android
+📁 Estrutura de Pastas
+bash
+Copiar
+Editar
+BancoApp/
+│
+├── assets/                # Imagens e ícones
+├── components/            # Componentes reutilizáveis
+├── screens/               # Telas principais do app
+├── services/              # Requisições com Axios
+├── navigation/            # Configuração de rotas
+├── App.tsx                # Entry point
+└── .env                   # Variáveis de ambiente
+📡 API Esperada
+A aplicação espera um backend RESTful com os seguintes endpoints:
+
+GET /balance — Retorna saldo do usuário.
+
+GET /transactions?page=1&limit=10 — Retorna lista paginada de transações.
+
+🐞 Logs & Debug
+Requisições são logadas no console usando axios.interceptors para ajudar no debug:
+
+ts
+Copiar
+Editar
+console.log('🔄 Fazendo requisição para:', request.url);
+console.log('🔄 Com dados:', request.data);
