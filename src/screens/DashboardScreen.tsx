@@ -38,18 +38,31 @@ export const DashboardScreen: React.FC = () => {
     
     try {
       setLoading(true);
+      console.log('🔄 Carregando transações página:', pageNumber);
       const response = await TransactionsService.getTransactions(pageNumber);
+      console.log('📊 Resposta de transações:', response);
       
-      if (shouldRefresh) {
-        setTransactions(response.transactions);
+      // Verificar se a resposta existe e tem o formato esperado
+      if (response && response.transactions) {
+        if (shouldRefresh) {
+          setTransactions(response.transactions);
+        } else {
+          setTransactions(prev => [...prev, ...(response.transactions || [])]);
+        }
+        
+        setHasMore(response.hasMore || false);
+        setPage(pageNumber);
       } else {
-        setTransactions(prev => [...prev, ...response.transactions]);
+        console.warn('Resposta da API inválida ou vazia:', response);
+        if (shouldRefresh) {
+          setTransactions([]);
+        }
       }
-      
-      setHasMore(response.hasMore);
-      setPage(pageNumber);
     } catch (error) {
-      console.error('Error loading transactions:', error);
+      console.error('❌ Erro ao carregar transações:', error);
+      if (shouldRefresh) {
+        setTransactions([]);
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -58,10 +71,18 @@ export const DashboardScreen: React.FC = () => {
 
   const loadBalance = useCallback(async () => {
     try {
+      console.log('🔄 Carregando saldo');
       const response = await TransactionsService.getBalance();
-      setBalance(response.balance);
+      console.log('💰 Resposta de saldo:', response);
+      
+      if (response && typeof response.balance === 'number') {
+        setBalance(response.balance);
+      } else {
+        console.warn('Resposta de saldo inválida:', response);
+        // Manter o saldo atual em caso de erro
+      }
     } catch (error) {
-      console.error('Error loading balance:', error);
+      console.error('❌ Erro ao carregar saldo:', error);
     }
   }, []);
 
@@ -79,23 +100,33 @@ export const DashboardScreen: React.FC = () => {
 
   useEffect(() => {
     loadBalance();
-    loadTransactions();
-  }, []);
+    loadTransactions(1, true);
+  }, [loadBalance, loadTransactions]);
 
   const renderTransactionItem = ({ item }: { item: Transaction }) => {
+    if (!item) return null;
+    
     const isIncome = item.type === 'INCOME';
+    const fromUserNickname = item.fromUser?.nickname || 'desconhecido';
+    const toUserNickname = item.toUser?.nickname || 'desconhecido';
     
     return (
       <TouchableOpacity 
         style={styles.transactionItem}
-        onPress={() => navigation.navigate('TransactionDetails', { transactionId: item.id })}
+        onPress={() => {
+          if (item.id) {
+            navigation.navigate('TransactionDetails', { transactionId: item.id });
+          }
+        }}
       >
         <View style={styles.transactionInfo}>
-          <Text style={styles.transactionDate}>{formatDate(item.createdAt)}</Text>
+          <Text style={styles.transactionDate}>
+            {item.createdAt ? formatDate(item.createdAt) : 'Data desconhecida'}
+          </Text>
           <Text style={styles.transactionDescription} numberOfLines={1}>
             {item.description || (isIncome 
-              ? `Recebido de ${item.fromUser?.nickname || 'desconhecido'}`
-              : `Enviado para ${item.toUser?.nickname || 'desconhecido'}`
+              ? `Recebido de ${fromUserNickname}`
+              : `Enviado para ${toUserNickname}`
             )}
           </Text>
         </View>
@@ -103,7 +134,7 @@ export const DashboardScreen: React.FC = () => {
           styles.transactionValue,
           { color: isIncome ? '#2ecc71' : '#e74c3c' }
         ]}>
-          {isIncome ? '+' : '-'} {formatCurrency(item.value)}
+          {isIncome ? '+' : '-'} {formatCurrency(item.value || 0)}
         </Text>
       </TouchableOpacity>
     );
@@ -139,8 +170,8 @@ export const DashboardScreen: React.FC = () => {
         <Text style={styles.transactionsTitle}>Extrato</Text>
         
         <FlatList
-          data={transactions}
-          keyExtractor={item => item.id}
+          data={transactions || []}
+          keyExtractor={item => item.id || Math.random().toString()}
           renderItem={renderTransactionItem}
           showsVerticalScrollIndicator={false}
           refreshControl={
